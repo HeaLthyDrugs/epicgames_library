@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
+import { LibraryProvider } from "./context/LibraryContext";
 
 const roboto = Roboto({
   weight: ['300', '400', '500', '700'],
@@ -24,7 +25,9 @@ export default function RootLayout({
       <body
         className={`${roboto.variable} font-roboto antialiased`}
       >
-        {children}
+        <LibraryProvider>
+          {children}
+        </LibraryProvider>
       </body>
     </html>
   );

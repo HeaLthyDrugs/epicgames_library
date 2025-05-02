@@ -195,15 +195,17 @@ const Navbar = () => {
 
           {/* STORE text */}
           <div className="mx-6">
-            <div className="w-[54px] h-[30px]">
-              <Image
-                src="/Store.svg"
-                alt="STORE"
-                width={54}
-                height={30}
-                className="object-contain"
-              />
-            </div>
+            <Link href="/" className="group block cursor-pointer" aria-label="Go to store">
+              <div className="w-[54px] h-[30px] transition-all duration-300 group-hover:opacity-70 group-hover:transform group-hover:scale-105">
+                <Image
+                  src="/Store.svg"
+                  alt="STORE"
+                  width={54}
+                  height={30}
+                  className="object-contain"
+                />
+              </div>
+            </Link>
           </div>
 
           {/* Navigation Links */}

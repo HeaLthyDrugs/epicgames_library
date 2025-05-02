@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { getRawgApi, Game } from "../services/rawg-api";
+import Link from "next/link";
+import { useLibrary } from "../context/LibraryContext";
+import PurchaseModal from "./PurchaseModal";
 
 const DiscoverSection = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -11,6 +14,9 @@ const DiscoverSection = () => {
   const [upcomingGames, setUpcomingGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const { isGameInLibrary } = useLibrary();
 
   useEffect(() => {
     const fetchUpcomingGames = async () => {
@@ -48,6 +54,15 @@ const DiscoverSection = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollBy({ left: 400, behavior: "smooth" });
     }
+  };
+
+  const handleBuyGame = (game: Game) => {
+    setSelectedGame(game);
+    setShowPurchaseModal(true);
+  };
+
+  const handleClosePurchaseModal = () => {
+    setShowPurchaseModal(false);
   };
 
   if (loading) {
@@ -156,21 +171,42 @@ const DiscoverSection = () => {
                       ? `Coming ${new Date(game.released).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` 
                       : 'Coming Soon'}
                   </span>
-                  <button
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/10"
-                    tabIndex={0}
-                    aria-label={`Add ${game.name} to wishlist`}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                    </svg>
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/10"
+                      tabIndex={0}
+                      aria-label={`Add ${game.name} to wishlist`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleBuyGame(game)}
+                      className="bg-[#0074e4] text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#0066cc]"
+                      tabIndex={0}
+                      aria-label={`Buy ${game.name}`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 3h18v18H3z"></path>
+                        <path d="M12 8v8M8 12h8"></path>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Purchase Modal */}
+      {showPurchaseModal && selectedGame && (
+        <PurchaseModal 
+          game={selectedGame} 
+          onClose={handleClosePurchaseModal} 
+        />
+      )}
     </section>
   );
 };

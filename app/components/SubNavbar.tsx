@@ -20,11 +20,11 @@ const SubNavbar = () => {
   
   return (
     <div 
-      className={`w-full bg-[#121212] z-40 border-b border-[#202020] ${
+      className={`w-full bg-[#121212] z-40 ${
         isSticky ? "sticky top-0 shadow-md" : ""
       }`}
     >
-      <div className="max-w-full px-12 py-6 lg:px-38">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center h-[52px] overflow-x-auto no-scrollbar">
           {/* Search bar - Left side */}
           <div className="flex items-center mr-8">

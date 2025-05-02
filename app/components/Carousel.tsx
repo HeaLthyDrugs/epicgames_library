@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -77,17 +77,11 @@ const Carousel = () => {
   const ANIMATION_DURATION = 10000; // 10 seconds
   const UPDATE_INTERVAL = 100; // Update progress every 100ms for smooth animation
 
-  useEffect(() => {
-    startProgressTimer();
-    
-    return () => {
-      if (progressInterval.current) {
-        clearInterval(progressInterval.current);
-      }
-    };
-  }, [currentSlide]);
+  const handleNext = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
+  }, []);
 
-  const startProgressTimer = () => {
+  const startProgressTimer = useCallback(() => {
     if (progressInterval.current) {
       clearInterval(progressInterval.current);
     }
@@ -108,14 +102,20 @@ const Carousel = () => {
         return newProgress;
       });
     }, UPDATE_INTERVAL);
-  };
+  }, [UPDATE_INTERVAL, ANIMATION_DURATION, handleNext]);
+
+  useEffect(() => {
+    startProgressTimer();
+    
+    return () => {
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
+      }
+    };
+  }, [currentSlide, startProgressTimer]);
 
   const handlePrev = () => {
     setCurrentSlide((prev) => (prev - 1 + carouselItems.length) % carouselItems.length);
-  };
-
-  const handleNext = () => {
-    setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
   };
 
   const handleTileClick = (index: number) => {

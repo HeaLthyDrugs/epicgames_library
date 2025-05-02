@@ -4,13 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SharedLibraryView from "../../../components/SharedLibraryView";
 
-type SharedPageProps = {
-  params: {
-    id: string;
-  };
-};
-
-export default function SharedLibraryPage({ params }: SharedPageProps) {
+export default function SharedLibraryPage({ 
+  params 
+}: { 
+  params: { id: string } 
+}) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 

@@ -1,67 +1,34 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-
-type Game = {
-  id: number;
-  title: string;
-  image: string;
-  category: string;
-  price: string;
-  specialLabel?: string;
-};
-
-const games: Game[] = [
-  {
-    id: 1,
-    title: "Clair Obscur: Expedition 33",
-    image: "/game-images/expedition33.jpg",
-    category: "Base Game",
-    price: "₹2,999"
-  },
-  {
-    id: 2,
-    title: "Escape from Tarkov: Arena",
-    image: "/game-images/tarkov-arena.jpg",
-    category: "Base Game",
-    price: "₹699",
-    specialLabel: "First Beta"
-  },
-  {
-    id: 3,
-    title: "Promise Mascot Agency",
-    image: "/game-images/promise-mascot.jpg",
-    category: "Base Game",
-    price: "₹789"
-  },
-  {
-    id: 4,
-    title: "REPOSE",
-    image: "/game-images/repose.jpg",
-    category: "Base Game",
-    price: "Free"
-  },
-  {
-    id: 5,
-    title: "Mandragora: Whispers of the Witch Tree",
-    image: "/game-images/mandragora.jpg",
-    category: "Base Game",
-    price: "₹899"
-  },
-  {
-    id: 6,
-    title: "33 Immortals",
-    image: "/game-images/33-immortals.jpg",
-    category: "Base Game",
-    price: "₹719"
-  }
-];
+import { getRawgApi, Game } from "../services/rawg-api";
 
 const DiscoverSection = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(true);
+  const [upcomingGames, setUpcomingGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUpcomingGames = async () => {
+      try {
+        setLoading(true);
+        const rawgApi = getRawgApi();
+        const games = await rawgApi.getUpcomingGames(6);
+        setUpcomingGames(games);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        console.error("Error fetching upcoming games:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUpcomingGames();
+  }, []);
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -82,6 +49,36 @@ const DiscoverSection = () => {
       scrollRef.current.scrollBy({ left: 400, behavior: "smooth" });
     }
   };
+
+  if (loading) {
+    return (
+      <section className="bg-[#121212] py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-white">Discover Something New</h2>
+          </div>
+          <div className="flex justify-center py-12">
+            <div className="text-white">Loading games...</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="bg-[#121212] py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-white">Discover Something New</h2>
+          </div>
+          <div className="flex justify-center py-12">
+            <div className="text-white">Error: {error}</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-[#121212] py-16">
@@ -128,33 +125,41 @@ const DiscoverSection = () => {
           className="flex space-x-6 overflow-x-auto no-scrollbar pb-4"
           onScroll={handleScroll}
         >
-          {games.map((game) => (
+          {upcomingGames.map((game) => (
             <div 
               key={game.id} 
               className="flex-shrink-0 w-80 group"
             >
               <div className="relative h-44 w-full overflow-hidden rounded-t-lg">
                 <Image
-                  src={game.image}
-                  alt={game.title}
+                  src={game.background_image || "https://placehold.co/600x400/121212/cccccc?text=No+Image"}
+                  alt={game.name}
                   fill
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                {game.specialLabel && (
-                  <div className="absolute top-2 left-2 bg-blue-600 px-2 py-1 text-xs font-medium text-white rounded">
-                    {game.specialLabel}
+                {game.metacritic && game.metacritic >= 80 && (
+                  <div className="absolute top-2 left-2 bg-green-700 px-2 py-1 text-xs font-medium text-white rounded">
+                    {game.metacritic}
                   </div>
                 )}
               </div>
-              <div className="bg-[#121212] p-4 rounded-b-lg">
-                <span className="text-xs text-gray-400 block mb-1">{game.category}</span>
-                <h3 className="text-base font-medium text-white mb-2 truncate">{game.title}</h3>
+              <div className="bg-[#202020] p-4 rounded-b-lg">
+                <span className="text-xs text-gray-400 block mb-1">
+                  {game.genres && game.genres.length > 0 
+                    ? game.genres.slice(0, 2).map(g => g.name).join(', ') 
+                    : 'Base Game'}
+                </span>
+                <h3 className="text-base font-medium text-white mb-2 truncate">{game.name}</h3>
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-white">{game.price}</span>
+                  <span className="font-medium text-white">
+                    {game.released 
+                      ? `Coming ${new Date(game.released).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` 
+                      : 'Coming Soon'}
+                  </span>
                   <button
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/10"
                     tabIndex={0}
-                    aria-label={`Add ${game.title} to wishlist`}
+                    aria-label={`Add ${game.name} to wishlist`}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>

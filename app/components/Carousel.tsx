@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { getRawgApi, Game } from "../services/rawg-api";
 
 type CarouselItem = {
   id: number;
@@ -15,71 +16,38 @@ type CarouselItem = {
   isFree?: boolean;
 };
 
-const carouselItems: CarouselItem[] = [
-  {
-    id: 1,
-    title: "Wuthering Waves",
-    subtitle: "NEW UPDATE",
-    description: "Version 2.3 \"Fiery Arpeggio of Summer Reunion\" is coming! Meet the new 5-Star Resonator: \"Zani\" and \"Ciaccona\"!",
-    image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1470&auto=format&fit=crop",
-    buttonText: "Play For Free",
-    buttonLink: "/game/wuthering-waves",
-    isFree: true
-  },
-  {
-    id: 2,
-    title: "May the 4th Be With You",
-    description: "Celebrate Star Wars Day with epic deals on Star Wars games",
-    image: "https://images.unsplash.com/photo-1596727147705-61a532a659bd?q=80&w=1374&auto=format&fit=crop",
-    buttonText: "Shop Now",
-    buttonLink: "/collection/starwars"
-  },
-  {
-    id: 3,
-    title: "Honkai Star Rail",
-    description: "Embark on an interstellar adventure in this space fantasy RPG",
-    image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=1470&auto=format&fit=crop",
-    buttonText: "Play Now",
-    buttonLink: "/game/honkai-star-rail"
-  },
-  {
-    id: 4,
-    title: "Clair Obscur: Expedition 33",
-    description: "Discover the mysteries of Expedition 33 in this immersive adventure",
-    image: "https://images.unsplash.com/photo-1559762705-2123e682a8dc?q=80&w=1470&auto=format&fit=crop",
-    buttonText: "Play Now",
-    buttonLink: "/game/expedition-33"
-  },
-  {
-    id: 5,
-    title: "Infinity Nikki",
-    subtitle: "NEW LIMITED OUTFITS AVAILABLE",
-    description: "Infinity Nikki Version 1.5 \"Bubble Season\" is available now! 100 Pulls and 5 Free outfits can be obtained!",
-    image: "https://images.unsplash.com/photo-1559583109-3e7968736000?q=80&w=1374&auto=format&fit=crop",
-    buttonText: "Play For Free",
-    buttonLink: "/game/infinity-nikki",
-    isFree: true
-  },
-  {
-    id: 6,
-    title: "MotoGP™25",
-    description: "Experience the thrill of MotoGP racing with the official game",
-    image: "https://images.unsplash.com/photo-1560419015-7c427e8ae5ba?q=80&w=1470&auto=format&fit=crop",
-    buttonText: "Buy Now",
-    buttonLink: "/game/motogp-25"
-  }
-];
-
 const Carousel = () => {
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [progress, setProgress] = useState(0);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
   const ANIMATION_DURATION = 10000; // 10 seconds
   const UPDATE_INTERVAL = 100; // Update progress every 100ms for smooth animation
 
-  const handleNext = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
+  const fetchGames = async () => {
+    try {
+      setLoading(true);
+      const rawgApi = getRawgApi();
+      const topGames = await rawgApi.getTopRatedGames(6);
+      setGames(topGames);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      console.error("Error fetching games:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGames();
   }, []);
+
+  const handleNext = useCallback(() => {
+    if (games.length === 0) return;
+    setCurrentSlide((prev) => (prev + 1) % games.length);
+  }, [games.length]);
 
   const startProgressTimer = useCallback(() => {
     if (progressInterval.current) {
@@ -105,22 +73,51 @@ const Carousel = () => {
   }, [UPDATE_INTERVAL, ANIMATION_DURATION, handleNext]);
 
   useEffect(() => {
-    startProgressTimer();
+    if (games.length > 0) {
+      startProgressTimer();
+    }
     
     return () => {
       if (progressInterval.current) {
         clearInterval(progressInterval.current);
       }
     };
-  }, [currentSlide, startProgressTimer]);
+  }, [currentSlide, startProgressTimer, games.length]);
 
   const handlePrev = () => {
-    setCurrentSlide((prev) => (prev - 1 + carouselItems.length) % carouselItems.length);
+    if (games.length === 0) return;
+    setCurrentSlide((prev) => (prev - 1 + games.length) % games.length);
   };
 
   const handleTileClick = (index: number) => {
     setCurrentSlide(index);
   };
+
+  if (loading) {
+    return (
+      <div className="relative bg-[#121212] h-[600px] flex items-center justify-center">
+        <div className="text-white">Loading games...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="relative bg-[#121212] h-[600px] flex items-center justify-center">
+        <div className="text-white">Error: {error}</div>
+      </div>
+    );
+  }
+
+  if (games.length === 0) {
+    return (
+      <div className="relative bg-[#121212] h-[600px] flex items-center justify-center">
+        <div className="text-white">No games found.</div>
+      </div>
+    );
+  }
+
+  const currentGame = games[currentSlide];
 
   return (
     <div className="relative bg-[#121212] h-[600px] flex overflow-hidden px-34">
@@ -130,8 +127,8 @@ const Carousel = () => {
           {/* Current slide */}
           <div className="absolute inset-0 z-0">
             <Image 
-              src={carouselItems[currentSlide].image} 
-              alt={carouselItems[currentSlide].title}
+              src={currentGame.background_image || "https://placehold.co/1200x600/121212/cccccc?text=No+Image"} 
+              alt={currentGame.name}
               fill
               className="object-cover rounded-2xl"
               priority
@@ -142,29 +139,52 @@ const Carousel = () => {
           {/* Game info */}
           <div className="absolute z-20 flex flex-col justify-end h-full w-full px-6 lg:px-8 pb-16">
             <div className="max-w-[600px]">
-              {/* NEW UPDATE tag */}
-              {carouselItems[currentSlide].subtitle && (
-                <p className="text-[14px] uppercase tracking-wider font-medium text-white mb-2">{carouselItems[currentSlide].subtitle}</p>
+              {/* Metacritic tag */}
+              {currentGame.metacritic && (
+                <div className="flex items-center mb-2">
+                  <span className={`text-sm px-2 py-1 rounded ${
+                    currentGame.metacritic >= 80 ? "bg-green-700" : 
+                    currentGame.metacritic >= 60 ? "bg-yellow-600" : "bg-red-700"
+                  }`}>
+                    {currentGame.metacritic}
+                  </span>
+                  <span className="text-[14px] uppercase tracking-wider font-medium text-white ml-2">Metacritic</span>
+                </div>
               )}
               
               {/* Title */}
-              <h2 className="text-4xl font-bold text-white mb-2">{carouselItems[currentSlide].title}</h2>
+              <h2 className="text-4xl font-bold text-white mb-2">{currentGame.name}</h2>
               
-              {/* Description */}
-              <p className="text-base text-white mb-6 max-w-md font-light">{carouselItems[currentSlide].description}</p>
+              {/* Release date and genres */}
+              <div className="flex items-center mb-3">
+                {currentGame.released && (
+                  <span className="text-sm text-gray-300 mr-4">Released: {new Date(currentGame.released).toLocaleDateString()}</span>
+                )}
+                {currentGame.genres && currentGame.genres.length > 0 && (
+                  <div className="flex flex-wrap">
+                    {currentGame.genres.slice(0, 3).map((genre, index) => (
+                      <span key={genre.id} className="text-sm text-gray-300 mr-2">
+                        {genre.name}{index < Math.min(currentGame.genres?.length || 0, 3) - 1 ? "," : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Description - Using a placeholder since RAWG API doesn't return full descriptions in the games list */}
+              <p className="text-base text-white mb-6 max-w-md font-light">
+                Explore {currentGame.name}, one of the top-rated games on RAWG with amazing gameplay and stunning visuals.
+              </p>
               
               {/* Buttons */}
               <div className="flex items-center space-x-4">
-                {carouselItems[currentSlide].isFree && (
-                  <span className="text-white font-normal">Free</span>
-                )}
                 <Link 
-                  href={carouselItems[currentSlide].buttonLink} 
+                  href={`/game/${currentGame.slug}`} 
                   className="bg-white hover:bg-gray-200 text-black px-6 py-3 rounded text-[14px] font-medium"
                   tabIndex={0}
-                  aria-label={carouselItems[currentSlide].buttonText}
+                  aria-label={`View ${currentGame.name}`}
                 >
-                  {carouselItems[currentSlide].buttonText}
+                  View Game
                 </Link>
                 <button 
                   className="bg-transparent border border-white text-white hover:bg-white/10 px-4 py-3 rounded flex items-center"
@@ -208,16 +228,16 @@ const Carousel = () => {
       <div className="w-[300px] z-20">
         <div className="h-full flex flex-col justify-start py-6">
           <div className="space-y-4 px-4">
-            {carouselItems.map((item, index) => (
+            {games.map((game, index) => (
               <div 
-                key={item.id} 
+                key={game.id} 
                 className={`relative flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
                   currentSlide === index ? "bg-[#333333]" : "bg-[#202020]/70 hover:bg-[#252525]"
                 }`}
                 onClick={() => handleTileClick(index)}
                 tabIndex={0}
                 role="button"
-                aria-label={`View ${item.title}`}
+                aria-label={`View ${game.name}`}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     handleTileClick(index);
@@ -226,14 +246,14 @@ const Carousel = () => {
               >
                 <div className="w-12 h-12 mr-3 relative overflow-hidden rounded">
                   <Image 
-                    src={item.image}
-                    alt={item.title}
+                    src={game.background_image || "https://placehold.co/48x48/121212/cccccc?text=No+Image"}
+                    alt={game.name}
                     width={48}
                     height={48}
                     className="object-cover"
                   />
                 </div>
-                <span className="text-white text-sm">{item.title}</span>
+                <span className="text-white text-sm line-clamp-2">{game.name}</span>
                 
                 {/* Progress indicator */}
                 {currentSlide === index && (

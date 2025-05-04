@@ -86,7 +86,7 @@ const PurchaseModal = ({ game, onClose }: PurchaseModalProps) => {
           
           <div className="flex flex-col md:flex-row">
             <div className="bg-[#F5F5F5] p-6 w-full md:w-2/3">
-              <h3 className="text-xl font-semibold mb-6">REVIEW AND PLACE ORDER</h3>
+              <h3 className="text-xl font-semibold mb-6 text-black">REVIEW AND PLACE ORDER</h3>
               
               <div className="mb-8">
                 <div className="text-sm text-gray-600 mb-2">Verify your information and click Place Order</div>

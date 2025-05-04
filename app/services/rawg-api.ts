@@ -16,6 +16,11 @@ export type Game = {
   tags?: { id: number; name: string }[];
   stores?: { store: { id: number; name: string } }[];
   short_screenshots?: { id: number; image: string }[];
+  esrb_rating?: {
+    id: number;
+    slug: string;
+    name: string;
+  };
 }
 
 export type ApiResponse<T> = {
@@ -105,6 +110,16 @@ export const getRawgApi = () => {
     
     getGenres: async (): Promise<{ id: number; name: string; image_background: string }[]> => {
       const data = await fetchWithKey('/genres') as ApiResponse<{ id: number; name: string; image_background: string }>;
+      return data.results;
+    },
+    
+    getGameScreenshots: async (gameId: number | string): Promise<{ id: number; image: string }[]> => {
+      const data = await fetchWithKey(`/games/${gameId}/screenshots`) as ApiResponse<{ id: number; image: string }>;
+      return data.results;
+    },
+    
+    getGameTrailers: async (gameId: number | string): Promise<{ id: number; name: string; preview: string; data: { 480: string; max: string } }[]> => {
+      const data = await fetchWithKey(`/games/${gameId}/movies`) as ApiResponse<{ id: number; name: string; preview: string; data: { 480: string; max: string } }>;
       return data.results;
     }
   };

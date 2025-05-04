@@ -35,3 +35,51 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Library custom styles */
+
+/* Hide scrollbar but allow scrolling for category tabs */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* Internet Explorer and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Glass morphism effects */
+.glass-morphism {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Gradient backgrounds */
+.epic-gradient-primary {
+  background: linear-gradient(135deg, #0074e4 0%, #004a8f 100%);
+}
+
+.epic-gradient-card {
+  background: linear-gradient(180deg, rgba(32, 32, 37, 0.8) 0%, rgba(22, 22, 26, 0.9) 100%);
+}
+
+/* Card hover effect */
+.epic-card-hover {
+  transition: all 0.3s ease;
+}
+
+.epic-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  border-color: rgba(59, 130, 246, 0.3);
+}

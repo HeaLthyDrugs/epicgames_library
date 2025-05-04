@@ -29,6 +29,8 @@ const Carousel = () => {
   const UPDATE_INTERVAL = 100; // Update progress every 100ms for smooth animation
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const { isGameInLibrary } = useLibrary();
+  const [wishlistedGames, setWishlistedGames] = useState<number[]>([]);
+  const [isWishlistLoading, setIsWishlistLoading] = useState<number | null>(null);
 
   const fetchGames = async () => {
     try {
@@ -125,6 +127,26 @@ const Carousel = () => {
     setShowPurchaseModal(false);
   };
 
+  const isGameInWishlist = (gameId: number) => {
+    return wishlistedGames.includes(gameId);
+  };
+
+  const handleWishlistToggle = (gameId: number) => {
+    setIsWishlistLoading(gameId);
+    
+    // Simulate API call with timeout
+    setTimeout(() => {
+      setWishlistedGames(prev => {
+        if (prev.includes(gameId)) {
+          return prev.filter(id => id !== gameId);
+        } else {
+          return [...prev, gameId];
+        }
+      });
+      setIsWishlistLoading(null);
+    }, 800);
+  };
+
   if (loading) {
     return (
       <div className="bg-[#121212]">
@@ -185,9 +207,8 @@ const Carousel = () => {
               {/* Game info */}
               <div className="absolute z-20 flex flex-col justify-end h-full w-full px-6 lg:px-8 pb-16">
                 <div className="max-w-[600px]">
-                  {/* Metacritic tag */}
-                  <div className="flex items-center mb-2 gap-2">
-                    {currentGame.metacritic && (
+                  <div className="flex items-center gap-2">
+                    {/* {currentGame.metacritic && (
                       <>
                         <span className={`text-sm px-2 py-1 rounded ${
                           currentGame.metacritic >= 80 ? "bg-green-700" : 
@@ -197,21 +218,22 @@ const Carousel = () => {
                         </span>
                         <span className="text-[14px] uppercase tracking-wider font-medium text-white">Metacritic</span>
                       </>
-                    )}
+                    )} */}
                     
-                    {/* New Release badge */}
+                    {/* New Release badge
                     {currentGame.released && new Date(currentGame.released).getFullYear() >= 2023 && (
                       <span className="text-sm px-2 py-1 bg-blue-600 rounded ml-2">
                         NEW RELEASE
                       </span>
-                    )}
+                    )} */}
+                    <h2 className=" text-[12px] font-bold text-white py-1 rounded tracking-wider">NEW RELEASE</h2>
                   </div>
                   
                   {/* Title */}
-                  <h2 className="text-4xl font-bold text-white mb-2">{currentGame.name}</h2>
+                  <h2 className="text-2xl font-bold text-white mb-2 tracking-wider">{currentGame.name}</h2>
                   
                   {/* Release date and genres */}
-                  <div className="flex items-center mb-3">
+                  {/* <div className="flex items-center mb-3">
                     {currentGame.released && (
                       <span className="text-sm text-gray-300 mr-4">Released: {new Date(currentGame.released).toLocaleDateString()}</span>
                     )}
@@ -224,43 +246,61 @@ const Carousel = () => {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </div> */}
                   
                   {/* Description - Using a placeholder since RAWG API doesn't return full descriptions in the games list */}
                   <p className="text-base text-white mb-6 max-w-md font-light">
-                    {currentGame.released && new Date(currentGame.released).getFullYear() >= 2022 
-                      ? `Experience ${currentGame.name}, one of the most popular recent releases with stunning visuals and innovative gameplay. Join millions of players worldwide in this cutting-edge adventure.`
-                      : `Explore ${currentGame.name}, a highly-rated game with amazing graphics and immersive gameplay. Discover why this title continues to captivate gamers everywhere.`
+                    {currentGame.description_raw 
+                      ? currentGame.description_raw.slice(0, 200) + '...'
+                      : `Experience ${currentGame.name}, a captivating game that will draw you into its world.`
                     }
                   </p>
+
+                  <div className="mb-2 font-medium text-white text-[14px] mx-2">
+                    {/* price and discount or free */}
+                      <span>
+                        $20
+                      </span>
+                  </div>
                   
                   {/* Buttons */}
                   <div className="flex items-center space-x-4">
                     <Link 
                       href={`/game/${currentGame.slug}`} 
-                      className="bg-white hover:bg-gray-200 text-black px-6 py-3 rounded text-[14px] font-medium"
+                      className="bg-white hover:bg-gray-200 text-black px-14 py-4 rounded-xl text-[14px] font-regular"
                       tabIndex={0}
                       aria-label={`View ${currentGame.name}`}
                     >
-                      View Game
+                      Buy Now
                     </Link>
                     <button 
-                      className="bg-[#0074e4] hover:bg-[#0066cc] text-white px-6 py-3 rounded text-[14px] font-medium flex items-center"
-                      onClick={handleBuyGame}
+                      className="bg-transparent text-white hover:bg-white/10 px-6 py-4 rounded-xl flex items-center cursor-pointer"
+                      onClick={() => handleWishlistToggle(currentGame.id)}
+                      disabled={isWishlistLoading === currentGame.id}
                       tabIndex={0}
-                      aria-label={`Buy ${currentGame.name}`}
+                      aria-label={isGameInWishlist(currentGame.id) ? "Remove from Wishlist" : "Add to Wishlist"}
                     >
-                      <span>Buy Now</span>
-                    </button>
-                    <button 
-                      className="bg-transparent border border-white text-white hover:bg-white/10 px-4 py-3 rounded flex items-center"
-                      tabIndex={0}
-                      aria-label="Add to Wishlist"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                      </svg>
-                      <span className="ml-2 text-[14px]">Add to Wishlist</span>
+                      {isWishlistLoading === currentGame.id ? (
+                        <div className="animate-spin mr-2">
+                          <svg width="16" height="16" viewBox="0 0 24 24" className="animate-spin" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" fill="none" strokeWidth="4"></circle>
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none"></path>
+                          </svg>
+                        </div>
+                      ) : isGameInWishlist(currentGame.id) ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="16" />
+                          <line x1="8" y1="12" x2="16" y2="12" />
+                        </svg>
+                      )}
+                      <span className="ml-2 text-[14px]">
+                        {isGameInWishlist(currentGame.id) ? "In Wishlist" : "Add to Wishlist"}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -291,14 +331,14 @@ const Carousel = () => {
           </div>
 
           {/* Game list sidebar (right side) */}
-          <div className="w-[300px] py-6">
+          <div className="w-[200px] py-6">
             <div className="h-full flex flex-col justify-start">
               <div className="space-y-4">
                 {games.map((game, index) => (
                   <div 
                     key={game.id} 
-                    className={`relative flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
-                      currentSlide === index ? "bg-[#333333]" : "bg-[#202020]/70 hover:bg-[#252525]"
+                    className={`relative flex items-center p-3 rounded-xl cursor-pointer transition-colors ${
+                      currentSlide === index ? "bg-[#333333]/70" : "hover:bg-[#252525]"
                     }`}
                     onClick={() => handleTileClick(index)}
                     tabIndex={0}
@@ -310,7 +350,17 @@ const Carousel = () => {
                       }
                     }}
                   >
-                    <div className="w-12 h-12 mr-3 relative overflow-hidden rounded">
+                    {/* Progress background for current slide */}
+                    {currentSlide === index && (
+                      <div 
+                        className="absolute inset-0 bg-[#444] rounded-xl transition-all duration-100 ease-linear z-0" 
+                        style={{ 
+                          width: `${progress}%`,
+                          background: 'linear-gradient(90deg, rgba(80,80,80,0.5) 0%, rgba(60,60,60,0.5) 100%)'
+                        }}
+                      ></div>
+                    )}
+                    <div className="w-12 h-12 mr-3 relative overflow-hidden z-10">
                       <Image 
                         src={game.background_image || "https://placehold.co/48x48/121212/cccccc?text=No+Image"}
                         alt={game.name}
@@ -324,7 +374,7 @@ const Carousel = () => {
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col z-10">
                       <span className="text-white text-sm line-clamp-1 font-medium">{game.name}</span>
                       {game.released && (
                         <span className="text-gray-400 text-xs">
@@ -332,16 +382,6 @@ const Carousel = () => {
                         </span>
                       )}
                     </div>
-                    
-                    {/* Progress indicator */}
-                    {currentSlide === index && (
-                      <div className="absolute bottom-0 left-0 h-1 bg-[#444] w-full">
-                        <div 
-                          className="h-full bg-white transition-all duration-100 ease-linear" 
-                          style={{ width: `${progress}%` }}
-                        ></div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
